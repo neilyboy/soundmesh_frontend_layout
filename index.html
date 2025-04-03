@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoundMesh - Professional Audio Communication</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1E293B',
+                        secondary: '#0F172A',
+                        accent: '#7C3AED',
+                        accent2: '#4F46E5',
+                        highlight: '#9333EA',
+                        text: '#E2E8F0',
+                        muted: '#94A3B8'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0F172A;
+            color: #E2E8F0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1E293B;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #7C3AED;
+            border-radius: 4px;
+        }
+        
+        /* Animation for active speaker */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(124, 58, 237, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); }
+        }
+        
+        .active-speaker {
+            animation: pulse 1.5s infinite;
+        }
+        
+        /* Transition effects */
+        .transition-all {
+            transition: all 0.3s ease;
+        }
+        
+        /* Custom toggle switch */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #7C3AED;
+        }
+        
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #7C3AED;
+        }
+    </style>
+</head>
+<body class="flex flex-col">
+    <!-- Top Navigation -->
+    <nav class="bg-primary py-3 px-4 flex items-center justify-between border-b border-secondary">
+        <div class="flex items-center space-x-2">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-accent to-accent2 flex items-center justify-center">
+                <i class="fas fa-wave-square text-white"></i>
+            </div>
+            <h1 class="text-xl font-bold">SoundMesh</h1>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <button id="serverViewBtn" class="px-3 py-1 rounded-md bg-accent text-white font-medium">
+                <i class="fas fa-server mr-1"></i> Server
+            </button>
+            <button id="clientViewBtn" class="px-3 py-1 rounded-md bg-secondary text-muted hover:text-white font-medium">
+                <i class="fas fa-user mr-1"></i> Client
+            </button>
+            <button class="p-2 rounded-full hover:bg-secondary">
+                <i class="fas fa-cog text-muted hover:text-white"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Server View (Default) -->
+        <div id="serverView" class="flex-1 flex flex-col overflow-hidden">
+            <!-- Server Header -->
+            <div class="bg-primary p-4 border-b border-secondary">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-semibold">Server Control Panel</h2>
+                    <div class="flex space-x-2">
+                        <button class="px-3 py-1 bg-accent rounded-md flex items-center">
+                            <i class="fas fa-plus mr-1"></i> New Channel
+                        </button>
+                        <button class="px-3 py-1 bg-secondary rounded-md flex items-center">
+                            <i class="fas fa-user-plus mr-1"></i> Add Client
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Server Status -->
+                <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-secondary p-3 rounded-lg">
+                        <div class="flex justify-between">
+                            <span class="text-muted">Server Status</span>
+                            <span class="text-green-400 font-medium">Online</span>
+                        </div>
+                        <div class="mt-2 flex justify-between">
+                            <span class="text-muted">Clients</span>
+                            <span class="font-medium">8 Connected</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-secondary p-3 rounded-lg">
+                        <div class="flex justify-between">
+                            <span class="text-muted">Broadcast Stream</span>
+                            <span class="text-green-400 font-medium">Active</span>
+                        </div>
+                        <div class="mt-2 flex justify-between">
+                            <span class="text-muted">Latency</span>
+                            <span class="font-medium">~120ms</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-secondary p-3 rounded-lg">
+                        <div class="flex justify-between">
+                            <span class="text-muted">API Status</span>
+                            <span class="text-green-400 font-medium">Running</span>
+                        </div>
+                        <div class="mt-2 flex justify-between">
+                            <span class="text-muted">Companion</span>
+                            <span class="font-medium">Connected</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Server Main Content -->
+            <div class="flex-1 overflow-auto p-4">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Channels Section -->
+                    <div class="bg-primary rounded-xl p-4 border border-secondary lg:col-span-2">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-semibold">Channels</h3>
+                            <div class="flex space-x-2">
+                                <button class="p-1 rounded hover:bg-secondary">
+                                    <i class="fas fa-ellipsis-v text-muted"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <!-- Channel Item -->
+                            <div class="bg-secondary rounded-lg p-3 border border-gray-800">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center">
+                                            <i class="fas fa-users text-accent"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-medium">Directors</h4>
+                                            <p class="text-xs text-muted">3 clients connected</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-volume-up text-green-400 mr-1"></i>
+                                            <input type="range" min="0" max="100" value="80" class="w-20 accent-accent">
+                                        </div>
+                                        <button class="p-2 rounded-full hover:bg-gray-800">
+                                            <i class="fas fa-edit text-muted hover:text-white"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Channel Item -->
+                            <div class="bg-secondary rounded-lg p-3 border border-gray-800">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center">
+                                            <i class="fas fa-camera text-accent"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-medium">Cameras</h4>
+                                            <p class="text-xs text-muted">2 clients connected</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-volume-up text-green-400 mr-1"></i>
+                                            <input type="range" min="0" max="100" value="75" class="w-20 accent-accent">
+                                        </div>
+                                        <button class="p-2 rounded-full hover:bg-gray-800">
+                                            <i class="fas fa-edit text-muted hover:text-white"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Channel Item -->
+                            <div class="bg-secondary rounded-lg p-3 border border-gray-800">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center">
+                                            <i class="fas fa-microphone text-accent"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-medium">Audio</h4>
+                                            <p class="text-xs text-muted">1 client connected</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-volume-up text-green-400 mr-1"></i>
+                                            <input type="range" min="0" max="100" value="85" class="w-20 accent-accent">
+                                        </div>
+                                        <button class="p-2 rounded-full hover:bg-gray-800">
+                                            <i class="fas fa-edit text-muted hover:text-white"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Channel Item -->
+                            <div class="bg-secondary rounded-lg p-3 border border-gray-800">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center">
+                                            <i class="fas fa-headset text-accent"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-medium">Producers</h4>
+                                            <p class="text-xs text-muted">2 clients connected</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-volume-up text-green-400 mr-1"></i>
+                                            <input type="range" min="0" max="100" value="70" class="w-20 accent-accent">
+                                        </div>
+                                        <button class="p-2 rounded-full hover:bg-gray-800">
+                                            <i class="fas fa-edit text-muted hover:text-white"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Clients Section -->
+                    <div class="bg-primary rounded-xl p-4 border border-secondary">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-semibold">Clients</h3>
+                            <div class="flex space-x-2">
+                                <button class="p-1 rounded hover:bg-secondary">
+                                    <i class="fas fa-ellipsis-v text-muted"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <!-- Client Item -->
+                            <div class="bg-secondary rounded-lg p-3 border border-gray-800">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center">
+                                            <i class="fas fa-user text-accent"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-medium">John (Director)</h4>
+                                            <p class="text-xs text-muted">Connected: 12:45 PM</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <div class="relative inline-block w-10 mr-2 align-middle select-none">
+                                            <input type="checkbox" name="toggle" id="toggle1" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" checked/>
+                                            <label for="toggle1" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                                        </div>
+                                        <button class="p-2 rounded-full hover:bg-gray-800">
+                                            <i class="fas fa-cog text-muted hover:text-white"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Client Item -->
+                            <div class="bg-secondary rounded-lg p-3 border border-gray-800">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center">
+                                            <i class="fas fa-user text-accent"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-medium">Sarah (Camera 1)</h4>
+                                            <p class="text-xs text-muted">Connected: 12:50 PM</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <div class="relative inline-block w-10 mr-2 align-middle select-none">
+                                            <input type="checkbox" name="toggle" id="toggle2" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" checked/>
+                                            <label for="toggle2" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                                        </div>
+                                        <button class="p-2 rounded-full hover:bg-gray-800">
+                                            <i class="fas fa-cog text-muted hover:text-white"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Client Item -->
+                            <div class="bg-secondary rounded-lg p-3 border border-gray-800">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center">
+                                            <i class="fas fa-user text-accent"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-medium">Mike (Audio)</h4>
+                                            <p class="text-xs text-muted">Connected: 12:55 PM</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <div class="relative inline-block w-10 mr-2 align-middle select-none">
+                                            <input type="checkbox" name="toggle" id="toggle3" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" checked/>
+                                            <label for="toggle3" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                                        </div>
+                                        <button class="p-2 rounded-full hover:bg-gray-800">
+                                            <i class="fas fa-cog text-muted hover:text-white"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Client Item -->
+                            <div class="bg-secondary rounded-lg p-3 border border-gray-800">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center">
+                                            <i class="fas fa-user text-accent"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-medium">Lisa (Producer)</h4>
+                                            <p class="text-xs text-muted">Connected: 12:58 PM</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <div class="relative inline-block w-10 mr-2 align-middle select-none">
+                                            <input type="checkbox" name="toggle" id="toggle4" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" checked/>
+                                            <label for="toggle4" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                                        </div>
+                                        <button class="p-2 rounded-full hover:bg-gray-800">
+                                            <i class="fas fa-cog text-muted hover:text-white"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Pending Client -->
+                            <div class="bg-secondary rounded-lg p-3 border border-yellow-500">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center">
+                                            <i class="fas fa-user-clock text-yellow-500"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-medium">New Client</h4>
+                                            <p class="text-xs text-muted">Waiting for authorization</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <button class="px-2 py-1 bg-green-600 rounded-md text-sm">
+                                            Approve
+                                        </button>
+                                        <button class="px-2 py-1 bg-red-600 rounded-md text-sm">
+                                            Deny
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Permission Matrix -->
+                <div class="mt-6 bg-primary rounded-xl p-4 border border-secondary">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-semibold">Permission Matrix</h3>
+                        <div class="flex space-x-2">
+                            <button class="p-1 rounded hover:bg-secondary">
+                                <i class="fas fa-ellipsis-v text-muted"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-gray-800">
+                                    <th class="text-left py-2">Client</th>
+                                    <th class="text-center py-2">Directors</th>
+                                    <th class="text-center py-2">Cameras</th>
+                                    <th class="text-center py-2">Audio</th>
+                                    <th class="text-center py-2">Producers</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b border-gray-800">
+                                    <td class="py-3">John (Director)</td>
+                                    <td class="text-center">
+                                        <div class="flex justify-center">
+                                            <span class="bg-green-900 text-green-300 px-2 py-1 rounded text-xs">Talk/Listen</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="flex justify-center">
+                                            <span class="bg-green-900 text-green-300 px-2 py-1 rounded text-xs">Talk/Listen</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="flex justify-center">
+                                            <span class="bg-green-900 text-green-300 px-2 py-1 rounded text-xs">Talk/Listen</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="flex justify-center">
+                                            <span class="bg-green-900 text-green-300 px-2 py-1 rounded text-xs">Talk/Listen</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-gray-800">
+                                    <td class="py-3">Sarah (Camera 1)</td>
+                                    <td class="text-center">
+                                        <div class="flex justify-center">
+                                            <span class="bg-blue-900 text-blue-300 px-2 py-1 rounded text-xs">Listen</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="flex justify-center">
+                                            <span class="bg-green-900 text-green-300 px-2 py-1 rounded text-xs">Talk/Listen</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="flex justify-center">
+                                            <span class="bg-blue-900 text-blue-300 px-2 py-1 rounded text-xs">Listen</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="flex justify-center">
+                                            <span class="bg-green-900 text-green-300 px-2 py-1 rounded text-xs">Talk/Listen</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-gray-800">
+                                    <td class="py-3">Mike (Audio)</td>
+                                    <td class="text-center">
+                                        <div class="flex justify-center">
+                                            <span class="bg-green-900 text-green-300 px-2 py-1 rounded text-xs">Talk/Listen</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="flex justify-center">
+                                            <span class="bg-blue-900 text-blue-300 px-2 py-1 rounded text-xs">Listen</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="flex justify-center">
+                                            <span class="bg-green-900 text-green-300 px-2 py-1 rounded text-xs">Talk/Listen</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="flex justify-center">
+                                            <span class="bg-green-900 text-green-300 px-2 py-1 rounded text-xs">Talk/Listen</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3">Lisa (Producer)</td>
+                                    <td class="text-center">
+                                        <div class="flex justify-center">
+                                            <span class="bg-green-900 text-green-300 px-2 py-1 rounded text-xs">Talk/Listen</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="flex justify-center">
+                                            <span class="bg-green-900 text-green-300 px-2 py-1 rounded text-xs">Talk/Listen</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="flex justify-center">
+                                            <span class="bg-green-900 text-green-300 px-2 py-1 rounded text-xs">Talk/Listen</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="flex justify-center">
+                                            <span class="bg-green-900 text-green-300 px-2 py-1 rounded text-xs">Talk/Listen</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Broadcast Mixer -->
+                <div class="mt-6 bg-primary rounded-xl p-4 border border-secondary">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-semibold">Broadcast Mixer</h3>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm text-muted">Output URL:</span>
+                            <div class="bg-secondary px-3 py-1 rounded-md text-sm">
+                                soundmesh.local/broadcast
+                            </div>
+                            <button class="p-1 rounded hover:bg-secondary">
+                                <i class="fas fa-copy text-muted hover:text-white"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <!-- Mixer Channel -->
+                        <div class="bg-secondary rounded-lg p-3 border border-gray-800">
+                            <div class="flex flex-col items-center">
+                                <div class="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center mb-2">
+                                    <i class="fas fa-users text-accent"></i>
+                                </div>
+                                <h4 class="font-medium text-sm mb-2">Directors</h4>
+                                <input type="range" min="0" max="100" value="80" class="w-full h-2 accent-accent mb-2" orient="vertical">
+                                <div class="flex items-center space-x-2">
+                                    <div class="relative inline-block w-10 align-middle select-none">
+                                        <input type="checkbox" name="toggle" id="mix1" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" checked/>
+                                        <label for="mix1" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                                    </div>
+                                    <span class="text-xs">Active</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Mixer Channel -->
+                        <div class="bg-secondary rounded-lg p-3 border border-gray-800">
+                            <div class="flex flex-col items-center">
+                                <div class="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center mb-2">
+                                    <i class="fas fa-camera text-accent"></i>
+                                </div>
+                                <h4 class="font-medium text-sm mb-2">Cameras</h4>
+                                <input type="range" min="0" max="100" value="65" class="w-full h-2 accent-accent mb-2" orient="vertical">
+                                <div class="flex items-center space-x-2">
+                                    <div class="relative inline-block w-10 align-middle select-none">
+                                        <input type="checkbox" name="toggle" id="mix2" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" checked/>
+                                        <label for="mix2" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                                    </div>
+                                    <span class="text-xs">Active</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Mixer Channel -->
+                        <div class="bg-secondary rounded-lg p-3 border border-gray-800">
+                            <div class="flex flex-col items-center">
+                                <div class="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center mb-2">
+                                    <i class="fas fa-microphone text-accent"></i>
+                                </div>
+                                <h4 class="font-medium text-sm mb-2">Audio</h4>
+                                <input type="range" min="0" max="100" value="90" class="w-full h-2 accent-accent mb-2" orient="vertical">
+                                <div class="flex items-center space-x-2">
+                                    <div class="relative inline-block w-10 align-middle select-none">
+                                        <input type="checkbox" name="toggle" id="mix3" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" checked/>
+                                        <label for="mix3" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                                    </div>
+                                    <span class="text-xs">Active</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Mixer Channel -->
+                        <div class="bg-secondary rounded-lg p-3 border border-gray-800">
+                            <div class="flex flex-col items-center">
+                                <div class="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center mb-2">
+                                    <i class="fas fa-headset text-accent"></i>
+                                </div>
+                                <h4 class="font-medium text-sm mb-2">Producers</h4>
+                                <input type="range" min="0" max="100" value="75" class="w-full h-2 accent-accent mb-2" orient="vertical">
+                                <div class="flex items-center space-x-2">
+                                    <div class="relative inline-block w-10 align-middle select-none">
+                                        <input type="checkbox" name="toggle" id="mix4" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" checked/>
+                                        <label for="mix4" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                                    </div>
+                                    <span class="text-xs">Active</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 flex justify-between items-center">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-4 h-4 rounded-full bg-green-500"></div>
+                            <span class="text-sm">Stream Active</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm text-muted">Latency: ~120ms</span>
+                            <button class="px-3 py-1 bg-accent rounded-md text-sm">
+                                <i class="fas fa-play mr-1"></i> Restart Stream
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Client View (Hidden by default) -->
+        <div id="clientView" class="flex-1 flex flex-col overflow-hidden hidden">
+            <!-- Client Header -->
+            <div class="bg-primary p-4 border-b border-secondary">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-accent to-accent2 flex items-center justify-center">
+                            <i class="fas fa-wave-square text-white"></i>
+                        </div>
+                        <h2 class="text-lg font-semibold">SoundMesh Client</h2>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <div class="flex items-center space-x-1">
+                            <i class="fas fa-signal text-green-500"></i>
+                            <span class="text-sm">Strong</span>
+                        </div>
+                        <div class="w-4 h-4 rounded-full bg-green-500"></div>
+                        <span class="text-sm">Connected</span>
+                    </div>
+                </div>
+                
+                <!-- Client Status -->
+                <div class="mt-4 grid grid-cols-2 gap-3">
+                    <div class="bg-secondary p-3 rounded-lg">
+                        <div class="flex justify-between">
+                            <span class="text-muted">Client</span>
+                            <span class="font-medium">Sarah (Camera 1)</span>
+                        </div>
+                    </div>
+                    <div class="bg-secondary p-3 rounded-lg">
+                        <div class="flex justify-between">
+                            <span class="text-muted">Latency</span>
+                            <span class="font-medium">~140ms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Client Main Content -->
+            <div class="flex-1 overflow-auto p-4">
+                <!-- Channels List -->
+                <div class="mb-6">
+                    <h3 class="font-semibold mb-3">Available Channels</h3>
+                    
+                    <div class="space-y-3">
+                        <!-- Channel Item -->
+                        <div class="bg-secondary rounded-lg p-3 border border-gray-800">
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center space-x-3">
+                                    <div class="relative">
+                                        <div class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center">
+                                            <i class="fas fa-users text-accent"></i>
+                                        </div>
+                                        <div class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 border-2 border-secondary"></div>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium">Directors</h4>
+                                        <p class="text-xs text-muted">Listen Only</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-volume-up text-green-400 mr-1"></i>
+                                        <input type="range" min="0" max="100" value="75" class="w-20 accent-accent">
+                                    </div>
+                                    <button class="p-2 rounded-full bg-gray-800 hover:bg-accent">
+                                        <i class="fas fa-volume-mute text-muted hover:text-white"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Channel Item -->
+                        <div class="bg-secondary rounded-lg p-3 border border-accent active-speaker">
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center space-x-3">
+                                    <div class="relative">
+                                        <div class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center">
+                                            <i class="fas fa-camera text-accent"></i>
+                                        </div>
+                                        <div class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 border-2 border-secondary"></div>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium">Cameras</h4>
+                                        <p class="text-xs text-muted">Talk/Listen</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-volume-up text-green-400 mr-1"></i>
+                                        <input type="range" min="0" max="100" value="85" class="w-20 accent-accent">
+                                    </div>
+                                    <button class="p-2 rounded-full bg-accent hover:bg-accent2">
+                                        <i class="fas fa-microphone text-white"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Channel Item -->
+                        <div class="bg-secondary rounded-lg p-3 border border-gray-800">
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center space-x-3">
+                                    <div class="relative">
+                                        <div class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center">
+                                            <i class="fas fa-microphone text-accent"></i>
+                                        </div>
+                                        <div class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 border-2 border-secondary"></div>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium">Audio</h4>
+                                        <p class="text-xs text-muted">Listen Only</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-volume-up text-green-400 mr-1"></i>
+                                        <input type="range" min="0" max="100" value="65" class="w-20 accent-accent">
+                                    </div>
+                                    <button class="p-2 rounded-full bg-gray-800 hover:bg-accent">
+                                        <i class="fas fa-volume-mute text-muted hover:text-white"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Channel Item -->
+                        <div class="bg-secondary rounded-lg p-3 border border-gray-800">
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center space-x-3">
+                                    <div class="relative">
+                                        <div class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center">
+                                            <i class="fas fa-headset text-accent"></i>
+                                        </div>
+                                        <div class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 border-2 border-secondary"></div>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium">Producers</h4>
+                                        <p class="text-xs text-muted">Talk/Listen</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-volume-up text-green-400 mr-1"></i>
+                                        <input type="range" min="0" max="100" value="90" class="w-20 accent-accent">
+                                    </div>
+                                    <button class="p-2 rounded-full bg-gray-800 hover:bg-accent">
+                                        <i class="fas fa-microphone text-muted hover:text-white"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Controls -->
+                <div class="mb-6">
+                    <h3 class="font-semibold mb-3">Quick Controls</h3>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- Control Item -->
+                        <button class="bg-secondary rounded-lg p-4 border border-gray-800 hover:border-accent flex flex-col items-center">
+                            <div class="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center mb-2">
+                                <i class="fas fa-microphone-slash text-red-500 text-xl"></i>
+                            </div>
+                            <span class="text-sm">Mute All</span>
+                        </button>
+                        
+                        <!-- Control Item -->
+                        <button class="bg-secondary rounded-lg p-4 border border-gray-800 hover:border-accent flex flex-col items-center">
+                            <div class="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center mb-2">
+                                <i class="fas fa-headphones text-accent text-xl"></i>
+                            </div>
+                            <span class="text-sm">Solo Producers</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Communication Modes -->
+                <div>
+                    <h3 class="font-semibold mb-3">Communication Mode</h3>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- Mode Item -->
+                        <button class="bg-accent rounded-lg p-4 border border-accent2 flex flex-col items-center">
+                            <div class="w-12 h-12 rounded-full bg-accent2 flex items-center justify-center mb-2">
+                                <i class="fas fa-comments text-white text-xl"></i>
+                            </div>
+                            <span class="text-sm">Duplex</span>
+                        </button>
+                        
+                        <!-- Mode Item -->
+                        <button class="bg-secondary rounded-lg p-4 border border-gray-800 hover:border-accent flex flex-col items-center">
+                            <div class="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center mb-2">
+                                <i class="fas fa-hand-paper text-accent text-xl"></i>
+                            </div>
+                            <span class="text-sm">Push-to-Talk</span>
+                        </button>
+                    </div>
+                    
+                    <div class="mt-4 text-xs text-muted">
+                        <p>• Duplex: Continuous two-way communication</p>
+                        <p>• Push-to-Talk: Hold button to transmit</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Client Footer -->
+            <div class="bg-primary p-3 border-t border-secondary">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center space-x-2">
+                        <div class="relative">
+                            <div class="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
+                                <i class="fas fa-microphone text-white"></i>
+                            </div>
+                            <div class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-red-500 border-2 border-primary flex items-center justify-center">
+                                <i class="fas fa-slash text-white text-xs"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-xs text-muted">Current Channel</p>
+                            <p class="font-medium">Cameras</p>
+                        </div>
+                    </div>
+                    
+                    <button id="pttButton" class="px-6 py-3 bg-accent rounded-full font-medium flex items-center justify-center transition-all hover:bg-accent2 active:scale-95">
+                        <i class="fas fa-microphone mr-2"></i> Hold to Talk
+                    </button>
+                    
+                    <button class="p-2 rounded-full hover:bg-secondary">
+                        <i class="fas fa-ellipsis-h text-muted hover:text-white"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Toggle between server and client views
+        const serverViewBtn = document.getElementById('serverViewBtn');
+        const clientViewBtn = document.getElementById('clientViewBtn');
+        const serverView = document.getElementById('serverView');
+        const clientView = document.getElementById('clientView');
+        
+        serverViewBtn.addEventListener('click', () => {
+            serverView.classList.remove('hidden');
+            clientView.classList.add('hidden');
+            serverViewBtn.classList.remove('bg-secondary', 'text-muted');
+            serverViewBtn.classList.add('bg-accent', 'text-white');
+            clientViewBtn.classList.remove('bg-accent', 'text-white');
+            clientViewBtn.classList.add('bg-secondary', 'text-muted');
+        });
+        
+        clientViewBtn.addEventListener('click', () => {
+            clientView.classList.remove('hidden');
+            serverView.classList.add('hidden');
+            clientViewBtn.classList.remove('bg-secondary', 'text-muted');
+            clientViewBtn.classList.add('bg-accent', 'text-white');
+            serverViewBtn.classList.remove('bg-accent', 'text-white');
+            serverViewBtn.classList.add('bg-secondary', 'text-muted');
+        });
+        
+        // Push-to-talk button functionality
+        const pttButton = document.getElementById('pttButton');
+        let pttActive = false;
+        
+        pttButton.addEventListener('mousedown', () => {
+            pttActive = true;
+            pttButton.classList.remove('bg-accent');
+            pttButton.classList.add('bg-green-600');
+            pttButton.innerHTML = '<i class="fas fa-microphone mr-2"></i> Transmitting';
+            // Here you would start audio transmission
+        });
+        
+        pttButton.addEventListener('mouseup', () => {
+            if (pttActive) {
+                pttActive = false;
+                pttButton.classList.remove('bg-green-600');
+                pttButton.classList.add('bg-accent');
+                pttButton.innerHTML = '<i class="fas fa-microphone mr-2"></i> Hold to Talk';
+                // Here you would stop audio transmission
+            }
+        });
+        
+        pttButton.addEventListener('mouseleave', () => {
+            if (pttActive) {
+                pttActive = false;
+                pttButton.classList.remove('bg-green-600');
+                pttButton.classList.add('bg-accent');
+                pttButton.innerHTML = '<i class="fas fa-microphone mr-2"></i> Hold to Talk';
+                // Here you would stop audio transmission
+            }
+        });
+        
+        // Touch support for PTT
+        pttButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            pttActive = true;
+            pttButton.classList.remove('bg-accent');
+            pttButton.classList.add('bg-green-600');
+            pttButton.innerHTML = '<i class="fas fa-microphone mr-2"></i> Transmitting';
+            // Here you would start audio transmission
+        });
+        
+        pttButton.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (pttActive) {
+                pttActive = false;
+                pttButton.classList.remove('bg-green-600');
+                pttButton.classList.add('bg-accent');
+                pttButton.innerHTML = '<i class="fas fa-microphone mr-2"></i> Hold to Talk';
+                // Here you would stop audio transmission
+            }
+        });
+        
+        // Simulate active speaker (for demo purposes)
+        setInterval(() => {
+            const speakerElements = document.querySelectorAll('.active-speaker');
+            speakerElements.forEach(el => {
+                el.classList.remove('active-speaker');
+            });
+            
+            // Randomly select a channel to show as active
+            const channels = document.querySelectorAll('#clientView .bg-secondary.border-gray-800');
+            if (channels.length > 0) {
+                const randomIndex = Math.floor(Math.random() * channels.length);
+                channels[randomIndex].classList.add('active-speaker');
+                channels[randomIndex].classList.add('border-accent');
+                
+                // Remove the active state after a delay
+                setTimeout(() => {
+                    channels[randomIndex].classList.remove('active-speaker');
+                    channels[randomIndex].classList.remove('border-accent');
+                }, 2000);
+            }
+        }, 3000);
+        
+        // Toggle switches functionality
+        document.querySelectorAll('.toggle-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const label = this.nextElementSibling;
+                if (this.checked) {
+                    label.classList.remove('bg-gray-300');
+                    label.classList.add('bg-accent');
+                } else {
+                    label.classList.remove('bg-accent');
+                    label.classList.add('bg-gray-300');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
